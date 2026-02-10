@@ -62,26 +62,36 @@ static void wiegand_scan_found(void* context) {
 
     DateTime datetime;
     furi_hal_rtc_get_datetime(&datetime);
+
+    // calc millis from DWT
+    uint32_t ms = (DWT->CYCCNT / 64000) % 1000;
+
+    // Name_in_millis
     snprintf(
         app->file_name,
         50,
-        "%02d_%02d_%02d_%02d_%02d_%02d",
+        "%02d_%02d_%02d_%02d_%02d_%02d_%03lu",
         datetime.year,
         datetime.month,
         datetime.day,
         datetime.hour,
         datetime.minute,
-        datetime.second);
+        datetime.second,
+        ms
+    );
+
     furi_hal_vibro_on(true);
-    furi_delay_ms(50);
+    furi_delay_ms(20);
     furi_hal_vibro_on(false);
-    furi_delay_ms(50);
+    furi_delay_ms(20);
+
     wiegand_save(app);
+
     furi_hal_vibro_on(true);
-    furi_delay_ms(50);
+    furi_delay_ms(20);
     furi_hal_vibro_on(false);
-    furi_delay_ms(1000);
-    wiegand_start_scan(app);
+
+    bit_count = 0;
 }
 
 static void wiegand_scan_timer_callback(void* context) {
@@ -101,10 +111,11 @@ static void wiegand_scan_timer_callback(void* context) {
         if(bit_count == 4 || bit_count == 8 || bit_count == 24 || bit_count == 26 ||
            bit_count == 32 || bit_count == 34 || bit_count == 35 || bit_count == 36 ||
            bit_count == 37 || bit_count == 40 || bit_count == 48) {
-            wiegand_stop_scan(app);
+
+            // DO NOT STOP SCAN ANYMORE
             found = true;
+
         } else {
-            // No data, clear
             bit_count = 0;
         }
     }
